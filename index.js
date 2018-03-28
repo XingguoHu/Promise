@@ -8,6 +8,7 @@ class Promise{
         this.reject = this.reject.bind(this);
         this.resolve = this.resolve.bind(this);
         this.then = this.then.bind(this);
+        this.catch = this.catch.bind(this);
         try{
             executor(this.resolve, this.reject);
         }catch(e){
@@ -57,13 +58,13 @@ class Promise{
                 resolve(onFulfilled(_this.value));
             }
             if (_this.status === 'rejected') {
-                reject(onRejected(_this.value));
+                reject(onRejected(_this.rejectReson));
             }
             //未完成异步,等待回调
             if(_this.status === 'pending'){
-                _this.onFulfilledCallBack = (value => {
+                _this.onFulfilledCallBack = onFulfilled ? (value => {
                     resolve(onFulfilled(value));
-                });
+                }) : null;
                 _this.onRejectedCallBack= (reson => {
                     if(onRejected){
                         reject(onRejected(reson) || _this.rejectReson);
@@ -74,6 +75,66 @@ class Promise{
             }
         });
     }
+    /*@params onFulfilled function
+    **return promise
+    */
+    catch(onFulfilled){
+        return this.then(null, onFulfilled);
+    }
+    /*@params value anyType
+    **return promise
+    */
+    static resolve(value){
+        return new Promise(function (resolve, reject){
+            resolve(value);
+        })
+    }
+    /*@params value anyType
+    **return promise
+    */
+    static reject(value){
+        return new Promise(function (resolve, reject) {
+            reject(value);
+        })
+    };
+    /*@params promises array[promise]
+    **return promise
+    */
+    static all(promises){
+        return new Promise(function (resolve, reject){
+            let result = [];
+            let i = 0;
+            function pushResult(index, value){
+                result[index] = value;
+                i++;
+                if(i === promises.length){
+                    resolve(result);
+                }
+            }
+            promises.forEach((promise, index) => {
+                promise.then(value =>{
+                    pushResult(index, value);
+                }).catch(e => {
+                    reject(e);
+                })
+            });
+        })
+    }
+    /*@params promises array[promise]
+    **return promise
+    */
+    static race(promises){
+        return new Promise(function (resolve, reject) {
+            promises.forEach(promise => {
+                promise.then(value => {
+                    resolve(value);
+                }).catch(e => {
+                    reject(e);
+                })
+            });
+        })
+    }
+
 }
 
 if (typeof window !== 'undefined') {
