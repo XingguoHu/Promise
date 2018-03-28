@@ -10,6 +10,7 @@ class Promise{
         this.then = this.then.bind(this);
         this.catch = this.catch.bind(this);
         try{
+
             executor(this.resolve, this.reject);
         }catch(e){
             this.reject(e);
@@ -55,19 +56,36 @@ class Promise{
         return new Promise(function(resolve, reject){
             //异步操作已经完成，直接调用
             if (_this.status === 'resolved') {
-                resolve(onFulfilled(_this.value));
+                try{
+                    resolve(onFulfilled(value));
+                }catch(e){
+                    reject(e);
+                }
             }
             if (_this.status === 'rejected') {
-                reject(onRejected(_this.rejectReson));
+                try{
+                    reject(onRejected(_this.rejectReson));
+                }catch(e){
+                    reject(e);
+                }
             }
             //未完成异步,等待回调
             if(_this.status === 'pending'){
                 _this.onFulfilledCallBack = onFulfilled ? (value => {
-                    resolve(onFulfilled(value));
+                    try{
+                        resolve(onFulfilled(value));
+                    }catch(e){
+                        reject(e);
+                    }
+                  
                 }) : null;
                 _this.onRejectedCallBack= (reson => {
                     if(onRejected){
-                        reject(onRejected(reson) || _this.rejectReson);
+                        try{
+                            reject(onRejected(reson) || _this.rejectReson);
+                        }catch(e){
+                            reject(e);
+                        }
                     }else{
                         reject(_this.rejectReson)
                     }
